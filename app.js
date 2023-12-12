@@ -1,11 +1,13 @@
+
 const path = require('path');
 
 const express = require('express');
 const bodyParser = require('body-parser');
-const mongoose=require('mongoose');
+const mongoose = require('mongoose');
+const session=require('express-session');
 
 const errorController = require('./controllers/error');
-// const mongoConnect = require('./util/database').mongoConnect;
+const User = require('./models/user');
 
 const app = express();
 
@@ -14,10 +16,11 @@ app.set('views', 'views');
 
 const adminRoutes = require('./routes/admin');
 const shopRoutes = require('./routes/shop');
-const User = require('./models/user');
+const authRoutes = require('./routes/auth');
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public')));
+app.user(session({secret: 'my secret', resave: false,saveUninitialized: false,cookie:{}}));
 
 app.use((req, res, next) => {
   User.findById('656851b55d13a1f9faf50ab9')
@@ -30,26 +33,29 @@ app.use((req, res, next) => {
 
 app.use('/admin', adminRoutes);
 app.use(shopRoutes);
+app.use(authRoutes);
 
 app.use(errorController.get404);
 
-mongoose.connect('mongodb+srv://Dung:dung1203@cluster0.esdvmgc.mongodb.net/shop?authMechanism=DEFAULT')
-.then(result => {
-  User.findOne().then(user => {
-    if (!user) {
-      const user = new User({
-        name: 'Dung',
-        email: 'dung@test.com',
-        cart: {
-          items: []
-        }
-      });
-      user.save();
-    }
+mongoose
+  .connect(
+    'mongodb+srv://Dung:dung1203@cluster0.esdvmgc.mongodb.net/shop?authMechanism=DEFAULT'
+  )
+  .then(result => {
+    User.findOne().then(user => {
+      if (!user) {
+        const user = new User({
+          name: 'Dung',
+          email: 'dung@test.com',
+          cart: {
+            items: []
+          }
+        });
+        user.save();
+      }
+    });
+    app.listen(3000);
+  })
+  .catch(err => {
+    console.log(err);
   });
-  app.listen(3000);
-})
-.catch(err => {
-  console.log(err);
-});
-
